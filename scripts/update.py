@@ -301,7 +301,39 @@ def build_week(week, current_week, teams, proteams):
 
     for pid, pl in players.items():
         markets += player_markets(week, pl, teams)
+    markets += week_extremes(week, matchups, teams)
     return {"matchups": matchups, "markets": markets, "sources": sorted(["ESPN", *sources])}
+
+
+def week_extremes(week, matchups, teams):
+    """Equipo con más y con menos puntos de la semana, simulando a los 10 equipos juntos."""
+    sides = [s for m in matchups for s in (m["home"], m["away"])]
+    if not sides:
+        return []
+    states = [m["state"] for m in matchups]
+    status = "closed" if all(s == "closed" for s in states) else "suspended" if "suspended" in states else "open"
+    decided = all(m["winner"] in ("HOME", "AWAY", "TIE") for m in matchups)
+    hi = {s["team"]: 0 for s in sides}
+    lo = dict(hi)
+    rnd = random.Random(week * 104729)
+    for _ in range(SIMS):
+        pts = {s["team"]: rnd.gauss(s["mean"], max(s["sd"], 0.01)) for s in sides}
+        hi[max(pts, key=pts.get)] += 1
+        lo[min(pts, key=pts.get)] += 1
+    final = {s["team"]: s["final"] for s in sides}
+    top, bottom = max(final.values()), min(final.values())
+    out = []
+    for kind, cnt, name, target in (("hi", hi, "más puntos", top), ("lo", lo, "menos puntos", bottom)):
+        for t, c in cnt.items():
+            p = c / SIMS
+            r = ("win" if final[t] == target else "loss") if decided else None
+            if r is None and p < 0.01:
+                continue
+            out.append(dict(id=f"{week}:{kind}:{t}", week=week, grp=f"{week}:{kind}",
+                            label=f"{teams[t]['name']} · equipo con {name} de la semana",
+                            dec=to_dec(p, VIG1), prob=round(p, 4), status="closed" if r else status,
+                            result=r, cat=f"Equipo con {name}", team=t))
+    return out
 
 
 def player_markets(week, pl, teams):

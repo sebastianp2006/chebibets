@@ -218,6 +218,7 @@ function renderTop(){
 
 function renderSide(){
   $('side').innerHTML='<h4>Matchups · Semana '+D.week+'</h4>'+D.matchups.map(m=>`<button onclick="openMatch(${m.id})">${esc(team(m.away.team).name)}<br>${esc(team(m.home.team).name)}<small>${stateTxt(m)}</small></button>`).join('')
+   +'<h4 style="margin-top:12px">Especiales de la semana</h4><button onclick="go(\'week\');setTimeout(()=>$(\'especiales\')?.scrollIntoView({behavior:\'smooth\'}),30)">Más y menos puntos</button>'
    +'<h4 style="margin-top:12px">Futuros</h4>'+FUT.map(f=>`<button onclick="go('futures','${f[0]}')">${f[1]}</button>`).join('');
 }
 const stateTxt=m=>m.state==='suspended'?'<span class="live">EN VIVO</span> · apuestas en pausa':m.state==='closed'?'Terminado':'Abierto';
@@ -245,7 +246,16 @@ function viewWeek(live){
   if(live&&!list.length) return `<h1 class="title">En vivo</h1><div class="panel"><p class="note">Ahorita no hay jugadores de la liga en partido. Durante los juegos del jueves, domingo y lunes aquí ves los marcadores y las líneas moviéndose. Mientras haya jugadores de un matchup en la cancha, sus apuestas quedan en pausa y se reabren cuando termina esa tanda de partidos.</p></div>`;
   return `<h1 class="title">${live?'En vivo':'Semana '+D.week+' · Líneas de juego'}</h1>
   <div class="panel"><table class="coupon"><thead><tr><th>Matchup</th><th>Spread</th><th>Total</th><th>Ganador</th></tr></thead><tbody>${list.map(matchRows).join('')}</tbody></table></div>
+  ${live?'':weekSpecials()}
   <div class="panel"><p class="note">Las líneas salen del promedio de ${D.sources.join(', ')} para cada titular. Se recalculan todos los días y cada pocos minutos en días de partido. "O" es over (más de) y "U" es under (menos de).</p></div>`;
+}
+
+function weekSpecials(){
+  const sideOf=t=>D.matchups.flatMap(m=>[m.home,m.away]).find(s=>s.team===t);
+  const list=k=>D.markets.filter(m=>m.week===D.week&&m.id.startsWith(D.week+':'+k+':')).sort((a,b)=>b.prob-a.prob);
+  const rows=k=>list(k).map(m=>{const t=team(m.team),s=sideOf(m.team);
+    return `<div class="prow" style="grid-template-columns:1fr 120px"><div class="who" style="display:flex;gap:8px;align-items:center">${logo(t)}<span>${esc(t.name)}<small>proy. ${s?s.mean.toFixed(1):'—'} pts</small></span></div>${oddBtn(m.id)}</div>`}).join('')||'<p class="note">Sin mercado disponible.</p>';
+  return `<div id="especiales"></div>`+panel('whi','Equipo con más puntos de la semana',rows('hi'))+panel('wlo','Equipo con menos puntos de la semana',rows('lo'));
 }
 
 /* ---------- vista: matchup ---------- */
