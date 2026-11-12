@@ -445,7 +445,9 @@ def futures_results(league, teams):
 # ---------- Supabase ----------
 
 def sb(path, body=None, method="POST"):
-    h = {"apikey": SB_KEY, "Authorization": f"Bearer {SB_KEY}", "Content-Type": "application/json"}
+    h = {"apikey": SB_KEY, "Content-Type": "application/json"}
+    if not SB_KEY.startswith("sb_"):      # las llaves viejas (JWT) también van como Bearer
+        h["Authorization"] = f"Bearer {SB_KEY}"
     req = Request(f"{SB_URL}/rest/v1/{path}", data=json.dumps(body).encode() if body is not None else None,
                   headers=h, method=method)
     with urlopen(req, timeout=60) as r:

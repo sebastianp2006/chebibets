@@ -376,7 +376,7 @@ function renderSlip(){
 function setStake(v){const cur=Number(store.get('cb_stake',0))||0;store.set('cb_stake',cur+v);renderSlip()}
 function slipMsg(t,ok){const e=$('slipMsg');if(!e)return;e.textContent=t;e.className='msg on '+(ok?'okm':'err')}
 async function rpc(fn,args){
-  const r=await fetch(D.supabase.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json',apikey:D.supabase.anon,Authorization:'Bearer '+D.supabase.anon},body:JSON.stringify(args)});
+  const r=await fetch(D.supabase.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:Object.assign({'Content-Type':'application/json',apikey:D.supabase.anon},D.supabase.anon.startsWith('sb_')?{}:{Authorization:'Bearer '+D.supabase.anon}),body:JSON.stringify(args)});
   const j=await r.json().catch(()=>null);
   if(!r.ok) throw new Error(j?.message||'Error del servidor');
   return j;
