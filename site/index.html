@@ -323,7 +323,7 @@ function betCard(b,showName){const st={open:'<span class="tag">Abierta</span>',w
   const legs=b.legs||[];
   return `<div class="bet"><div class="bh"><span>${showName?'<b style="color:#fff">'+esc(b.name)+'</b> · ':''}${legs.length>1?'Parlay de '+legs.length:'Sencilla'} · ${new Date(b.created_at).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}</span>${st}</div>
   <ul>${legs.map(l=>typeof l==='string'?`<li><span>${esc(l)}</span></li>`:`<li><span>${esc(l.label)}</span><span>${odds(l.dec)} ${legRes(l.result)}</span></li>`).join('')}</ul>
-  <div class="bf"><span>Apuesta <b>${money(b.stake)}</b> · momio <b>${odds(b.dec)}</b></span><span>${b.status==='open'?'Para ganar <b>'+money(b.stake*b.dec)+'</b>':b.status==='lost'?'<b class="lo">-'+money(b.stake)+'</b>':'Pagó <b class="w">'+money(b.payout)+'</b>'}</span></div></div>`}
+  <div class="bf"><span>Apuesta <b>${money(b.stake)}</b> · momio <b>${odds(b.dec)}</b></span><span>${b.status==='open'?'Pago potencial <b>'+money(b.stake*b.dec)+'</b>':b.status==='lost'?'<b class="lo">-'+money(b.stake)+'</b>':'Pagó <b class="w">'+money(b.payout)+'</b>'}</span></div></div>`}
 function viewMyBets(){
   if(!user) return `<h1 class="title">Mis apuestas</h1><div class="panel"><p class="note">Entra con tu equipo para ver tus boletos.</p><div style="padding:0 12px 12px"><button class="btn-y" onclick="openLogin()">Entrar</button></div></div>`;
   if(!myCache){fetchMine();return '<h1 class="title">Mis apuestas</h1><div class="panel"><p class="note">Cargando…</p></div>'}
@@ -368,7 +368,7 @@ function renderSlip(){
   $('slipfoot').innerHTML=`<div class="sumrow"><span>${n>1?'Parlay ('+n+' selecciones)':'Sencilla'}</span><b>${odds(dec)}</b></div>
    <div class="stake"><span>$</span><input id="stake" type="number" inputmode="decimal" min="10" step="10" value="${stake}"></div>
    <div class="qs">${[50,100,500,1000].map(v=>`<button onclick="setStake(${v})">+${v}</button>`).join('')}</div>
-   <div class="sumrow"><span>Para ganar</span><b id="towin">${money(stake*dec)}</b></div>
+   <div class="sumrow"><span>Pago potencial</span><b id="towin">${money(stake*dec)}</b></div>
    <button class="place" id="placeBtn" ${blocked||!D.supabase.url?'disabled':''} onclick="placeBet()">${!D.supabase.url?'Apuestas disponibles pronto':blocked?'Quita las selecciones cerradas':user?'Apostar '+money(stake):'Entrar y apostar'}</button>
    <div class="msg" id="slipMsg"></div>`;
   $('stake').oninput=e=>{const v=Number(e.target.value)||0;store.set('cb_stake',v);$('towin').textContent=money(v*totalDec());const b=$('placeBtn');if(user&&!b.disabled)b.textContent='Apostar '+money(v)};
