@@ -487,6 +487,101 @@ def sb(path, body=None, method="POST"):
         return json.loads(b) if b else None
 
 
+BOOST_CAP = 1000       # tope por persona en cada supermomio
+BOOST_MAX = 1.25       # el supermomio paga a lo mucho 25% más que el combinado normal
+DREAM_CAP = 1000
+DREAM_MAX = 1.70
+BOOST_EDGE = 0.97      # y nunca más del 97% del momio justo: la casa conserva ventaja
+
+
+def make_boosts(week, wmk, matchups, fixed):
+    """Supermomios de la semana. Las selecciones se eligen una vez y quedan fijas
+    (fixed viene de Supabase); el momio se recalcula en cada corrida."""
+    by_id = {m["id"]: m for m in wmk}
+    where = {}                                  # jugador -> (matchup, equipo NFL)
+    for m in matchups:
+        for s in (m["home"], m["away"]):
+            for p in s["lineup"]:
+                where[p["id"]] = (m["id"], p["nfl"])
+
+    def leg_key(m):
+        if m.get("player"):
+            return where.get(m["player"], (None, None))
+        return (int(m["id"].split(":")[2]), None) if ":ml:" in m["id"] else (None, None)
+
+    def pick(pool, k, used_g, used_n):
+        out = []
+        for m in pool:
+            g, nfl = leg_key(m)
+            if g is None or g in used_g or (nfl and nfl in used_n):
+                continue
+            out.append(m); used_g.add(g); used_n.add(nfl)
+            if len(out) == k:
+                return out
+        return None
+
+    templates = {}
+    if fixed:
+        templates = {k.split(":")[-1]: v for k, v in fixed.items() if k.startswith(f"{week}:boost:")}
+    else:
+        rnd = random.Random(week * 7717)
+        op = [m for m in wmk if m["status"] == "open"]
+        ml = sorted([m for m in op if ":ml:" in m["id"] and 0.55 <= m["prob"] <= 0.82], key=lambda m: -m["prob"])
+        td = [m for m in op if ":td:" in m["id"] and m["id"].endswith(":1") and 0.38 <= m["prob"] <= 0.72]
+        proj = {p["id"]: p["proj"] for mt in matchups for s in (mt["home"], mt["away"]) for p in s["lineup"]}
+        over = [m for m in op if ":pts:" in m["id"] and m["id"].endswith(":o") and m["player"] in proj]
+        stars = sorted(over, key=lambda m: -proj[m["player"]])
+        rnd.shuffle(td)
+        combos = {
+            "fav": pick(ml, 3, set(), set()),
+            "tdml": None,
+            "stars": pick(stars[:12], 3, set(), set()),
+            "td2": pick(td, 2, set(), set()),
+        }
+        g1, n1 = set(), set()
+        t = pick(td, 1, g1, n1)
+        w = pick(ml, 1, g1, n1)
+        combos["tdml"] = (t + w) if t and w else None
+        # soñadores: combinados difíciles con aumento grande
+        dogs = sorted([m for m in op if ":ml:" in m["id"] and 0.22 <= m["prob"] <= 0.45], key=lambda m: m["prob"])
+        td_all = sorted([m for m in op if ":td:" in m["id"] and m["id"].endswith(":1") and 0.3 <= m["prob"] <= 0.6],
+                        key=lambda m: m["prob"])
+        boom = [m for m in op if ":alt:" in m["id"] and 0.12 <= m["prob"] <= 0.3 and m["player"] in proj]
+        rnd.shuffle(boom)
+        combos["s_dogs"] = pick(dogs, 3, set(), set()) or pick(dogs, 2, set(), set())
+        combos["s_td3"] = pick(td_all, 3, set(), set())
+        combos["s_boom"] = pick(boom, 2, set(), set())
+        templates = {k: [m["id"] for m in v] for k, v in combos.items() if v}
+
+    names = {"fav": "Favoritos de la semana", "tdml": "TD + victoria",
+             "stars": "Over de estrellas", "td2": "Doble TD",
+             "s_dogs": "Soñador: Noche de underdogs", "s_td3": "Soñador: Lluvia de TDs",
+             "s_boom": "Soñador: Semana explosiva"}
+    out = []
+    for key, legs in templates.items():
+        ms = [by_id.get(i) for i in legs]
+        if any(m is None for m in ms):
+            continue
+        p = math.prod(m["prob"] for m in ms)
+        base = math.prod(m["dec"] for m in ms)
+        dream = key.startswith("s_")
+        boosted = round(min(base * (DREAM_MAX if dream else BOOST_MAX), BOOST_EDGE / p), 2) if p > 0 else base
+        lo, hi = (0.015, 0.13) if dream else (0.12, 0.45)
+        if not fixed and not (lo <= p <= hi and boosted >= base * (1.10 if dream else 1.05)):
+            continue                            # nada de "locks" ni aumentos de adorno
+        res = [m["result"] for m in ms]
+        result = ("loss" if "loss" in res else None if None in res else
+                  "win" if all(r == "win" for r in res) else "push")
+        sts = [m["status"] for m in ms]
+        status = "closed" if result or "closed" in sts else "suspended" if "suspended" in sts else "open"
+        out.append(dict(id=f"{week}:boost:{key}", week=week, grp=f"{week}:boost:{key}",
+                        label=f"⚡ {names.get(key, 'Supermomio')}: " + " + ".join(m["label"] for m in ms),
+                        dec=max(boosted, round(base, 2)), was_dec=round(base, 3), prob=round(p, 4),
+                        status=status, result=result, cat="Supermomio", max_stake=DREAM_CAP if dream else BOOST_CAP, dream=dream,
+                        legs=legs, title=names.get(key, "Supermomio"), leg_labels=[m["label"] for m in ms]))
+    return out
+
+
 def main():
     league = espn(["mSettings", "mStatus", "mTeam", "mMatchupScore"])
     cur = league["status"]["currentMatchupPeriod"]
@@ -509,10 +604,22 @@ def main():
             print("Supabase open_weeks:", e, file=sys.stderr)
     weeks_to_grade = {w for w in weeks_to_grade if 0 < w < cur}
 
+    def fixed_boosts(w):
+        if not (SB_URL and SB_KEY):
+            return {}
+        try:
+            return sb("rpc/boost_legs", {"p_week": w}) or {}
+        except Exception as e:
+            print("Supabase boost_legs:", e, file=sys.stderr)
+            return {}
+
     wk = build_week(cur, cur, teams, proteams)
+    wk["markets"] += make_boosts(cur, wk["markets"], wk["matchups"], fixed_boosts(cur))
     markets = list(wk["markets"])
     for w in sorted(weeks_to_grade):
-        markets += build_week(w, cur, teams, proteams)["markets"]
+        old = build_week(w, cur, teams, proteams)
+        fx = fixed_boosts(w)
+        markets += old["markets"] + (make_boosts(w, old["markets"], old["matchups"], fx) if fx else [])
 
     # fuerza de cada equipo: mitad lo que llevan anotando, mitad su alineación de esta semana
     played = max(1, min(cur - 1, reg))
@@ -547,7 +654,8 @@ def main():
     print(f"Semana {cur}: {len(wk['matchups'])} matchups, {len(markets)} mercados, fuentes {wk['sources']}")
 
     if SB_URL and SB_KEY:
-        slim = [{k: m.get(k) for k in ("id", "week", "grp", "label", "dec", "status", "result")} for m in markets]
+        keys = ("id", "week", "grp", "label", "dec", "status", "result", "max_stake", "was_dec", "legs")
+        slim = [{k: m.get(k) for k in keys} for m in markets]
         for i in range(0, len(slim), 500):
             sb("rpc/sync_markets", {"rows": slim[i:i + 500]})
         if extra:

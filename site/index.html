@@ -99,6 +99,18 @@ h1.title{font-size:20px;margin:4px 0 10px}
 .msg{font-size:12px;margin-top:8px;padding:8px;border-radius:3px;display:none}.msg.on{display:block}.msg.err{background:#5a2422;color:#ffd1cd}.msg.okm{background:#174d36;color:#c4f5da}
 .slipempty{padding:24px 14px;text-align:center;color:var(--muted);font-size:13px}
 .mslip{display:none}
+.boosts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;padding:8px}
+.boost{background:linear-gradient(160deg,#3a3420,#2a2e31 55%);border:1px solid #6b5a12;border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.boost.dream{background:linear-gradient(160deg,#3b1f3f,#2a2e31 60%);border-color:#8e3fa0}
+.boost.dream .bt{color:#f4a8ff}.boost.dream .odd .o{font-size:17px}
+.boost .pct{background:var(--yellow);color:#111;font-size:11px;font-weight:900;padding:2px 6px;border-radius:3px;margin-left:6px}
+.boost .bt{font-weight:800;color:var(--yellow);font-size:13px;letter-spacing:.3px}
+.boost ul{margin:0;padding-left:16px;font-size:13px;line-height:1.5}
+.boost .bo{display:flex;align-items:center;gap:10px;margin-top:auto}
+.boost .was{color:var(--muted);text-decoration:line-through;font-size:13px}
+.boost .odd{flex:1}.boost small{color:var(--muted);font-size:11px}
+.promo{padding:12px;border-top:1px solid var(--line);font-size:13px;line-height:1.55}.promo b{color:var(--yellow)}
+.pboost{color:var(--yellow);font-size:12px;font-weight:700}
 /* apuestas, tabla */
 .bet{border-top:1px solid var(--line);padding:10px 12px}
 .bet .bh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:var(--muted)}
@@ -143,6 +155,7 @@ table.lb th{font-size:11px;color:var(--muted);font-weight:600;background:var(--r
   <nav class="nav" id="nav">
     <button data-v="week" class="on">Semana</button>
     <button data-v="live">En vivo</button>
+    <button data-v="promos">Promos ⚡</button>
     <button data-v="futures">Futuros</button>
     <button data-v="mybets">Mis apuestas</button>
     <button data-v="board">Tabla</button>
@@ -245,6 +258,7 @@ function viewWeek(live){
   const list=D.matchups.filter(m=>!live||m.state!=='open');
   if(live&&!list.length) return `<h1 class="title">En vivo</h1><div class="panel"><p class="note">Ahorita no hay jugadores de la liga en partido. Durante los juegos del jueves, domingo y lunes aquí ves los marcadores y las líneas moviéndose. Mientras haya jugadores de un matchup en la cancha, sus apuestas quedan en pausa y se reabren cuando termina esa tanda de partidos.</p></div>`;
   return `<h1 class="title">${live?'En vivo':'Semana '+D.week+' · Líneas de juego'}</h1>
+  ${live?'':boostPanel()}
   <div class="panel"><table class="coupon"><thead><tr><th>Matchup</th><th>Spread</th><th>Total</th><th>Ganador</th></tr></thead><tbody>${list.map(matchRows).join('')}</tbody></table></div>
   ${live?'':weekSpecials()}
   <div class="panel"><p class="note">Las líneas salen del promedio de ${D.sources.join(', ')} para cada titular. Se recalculan todos los días y cada pocos minutos en días de partido. "O" es over (más de) y "U" es under (menos de).</p></div>`;
@@ -256,6 +270,22 @@ function weekSpecials(){
   const rows=k=>list(k).map(m=>{const t=team(m.team),s=sideOf(m.team);
     return `<div class="prow" style="grid-template-columns:1fr 120px"><div class="who" style="display:flex;gap:8px;align-items:center">${logo(t)}<span>${esc(t.name)}<small>proy. ${s?s.mean.toFixed(1):'—'} pts</small></span></div>${oddBtn(m.id)}</div>`}).join('')||'<p class="note">Sin mercado disponible.</p>';
   return `<div id="especiales"></div>`+panel('whi','Equipo con más puntos de la semana',rows('hi'))+panel('wlo','Equipo con menos puntos de la semana',rows('lo'));
+}
+
+/* ---------- promociones ---------- */
+function boostCards(){
+  const bs=D.markets.filter(m=>m.cat==='Supermomio');
+  if(!bs.length) return '<p class="note">Esta semana todavía no salen supermomios.</p>';
+  bs.sort((a,b)=>(a.dream?1:0)-(b.dream?1:0));
+  return '<div class="boosts">'+bs.map(b=>`<div class="boost${b.dream?' dream':''}"><div class="bt">${b.dream?'🌙':'⚡'} ${esc(b.title||'Supermomio')}<span class="pct">+${Math.round((b.dec-1)/(b.was_dec-1)*100-100)}%</span></div>
+    <ul>${(b.leg_labels||[]).map(l=>'<li>'+esc(l)+'</li>').join('')}</ul>
+    <div class="bo"><span class="was">${odds(b.was_dec)}</span>${oddBtn(b.id)}</div><small>Tope ${money(b.max_stake)} por persona · se apuesta sola</small></div>`).join('')+'</div>';
+}
+function boostPanel(){return panel('boosts','⚡ Supermomios de la semana',boostCards())}
+function viewPromos(){
+  return `<h1 class="title">Promociones</h1>${boostPanel()}
+  ${panel('pparlay','⚡ Boost de parlay',`<div class="promo">Arma un parlay de <b>4 o 5 selecciones</b> y tu ganancia sube <b>10%</b>. Con <b>6 o más</b> sube <b>15%</b>. Se aplica solo en tu boleto; no aplica a supermomios.</div>`)}
+  <div class="panel"><p class="note">Cada semana salen supermomios nuevos: combinados de matchups distintos con el momio aumentado. Los 🌙 soñadores son los más difíciles de pegar y traen el aumento más grande. Se apuestan solos (no dentro de un parlay) y tienen un tope de apuesta por persona. Si una selección se anula, el supermomio se anula y se devuelve la apuesta.</p></div>`;
 }
 
 /* ---------- vista: matchup ---------- */
@@ -362,11 +392,15 @@ function pick(id){
   const m=M[id]; if(!m||m.status!=='open') return;
   const i=slip.findIndex(s=>s.id===id);
   if(i>=0) slip.splice(i,1);
-  else{ slip=slip.filter(s=>s.grp!==m.grp); slip.push({id,grp:m.grp,label:m.label,dec:m.dec,status:m.status,cat:m.cat||''}) }
+  else{
+    if(m.max_stake) slip=[];
+    else slip=slip.filter(s=>s.grp!==m.grp&&!M[s.id]?.max_stake);
+    slip.push({id,grp:m.grp,label:m.label,dec:m.dec,status:m.status,cat:m.cat||''}) }
   store.set('cb_slip',slip); render(); flashSlip();
 }
 function flashSlip(){const b=$('mslip');b.animate?.([{transform:'translateY(-4px)'},{transform:'none'}],{duration:200})}
-function totalDec(){return slip.filter(s=>!s.gone).reduce((a,s)=>a*s.dec,1)}
+function parlayBoost(n){return n>=6?0.15:n>=4?0.10:0}
+function totalDec(){const l=slip.filter(s=>!s.gone),t=l.reduce((a,s)=>a*s.dec,1),b=parlayBoost(l.length);return Math.round((1+(t-1)*(1+b))*1000)/1000}
 function renderSlip(){
   const n=slip.length; $('cnt').textContent=n; $('mcnt').textContent=n;
   $('mslip').classList.toggle('empty',!n||$('slip').classList.contains('open'));
@@ -375,7 +409,10 @@ function renderSlip(){
   const dec=totalDec(), stake=Number(store.get('cb_stake',100))||0;
   $('modds').textContent=(n>1?'Parlay ':'')+odds(dec);
   const blocked=slip.some(s=>s.gone||s.status!=='open');
+  const pb=parlayBoost(n), cap=slip.length===1&&M[slip[0].id]?.max_stake;
   $('slipfoot').innerHTML=`<div class="sumrow"><span>${n>1?'Parlay ('+n+' selecciones)':'Sencilla'}</span><b>${odds(dec)}</b></div>
+   ${pb?`<div class="pboost">⚡ Boost de parlay: +${pb*100}% de ganancia aplicado</div>`:n===3?'<div class="sumrow"><span>Agrega 1 selección más y tu ganancia sube 10%</span></div>':''}
+   ${cap?`<div class="sumrow"><span>Supermomio · tope por persona</span><b>${money(cap)}</b></div>`:''}
    <div class="stake"><span>$</span><input id="stake" type="number" inputmode="decimal" min="10" step="10" value="${stake}"></div>
    <div class="qs">${[50,100,500,1000].map(v=>`<button onclick="setStake(${v})">+${v}</button>`).join('')}</div>
    <div class="sumrow"><span>Pago potencial</span><b id="towin">${money(stake*dec)}</b></div>
@@ -435,7 +472,7 @@ document.addEventListener('click',e=>{const s=$('slip');if(s.classList.contains(
 function render(){
   if(!D) return;
   renderTop(); renderSide();
-  $('main').innerHTML={week:()=>viewWeek(false),live:()=>viewWeek(true),match:viewMatch,futures:viewFutures,mybets:viewMyBets,board:viewBoard}[view.v]();
+  $('main').innerHTML={week:()=>viewWeek(false),live:()=>viewWeek(true),match:viewMatch,futures:viewFutures,promos:viewPromos,mybets:viewMyBets,board:viewBoard}[view.v]();
   renderSlip();
 }
 load(true);
