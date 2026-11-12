@@ -2,7 +2,7 @@
 alter table markets
   add column max_stake numeric(12,2),
   add column was_dec   numeric(8,3),
-  add column legs      text[];
+  add column legs      jsonb;
 
 create or replace function sync_markets(rows jsonb) returns int
 language sql security definer set search_path = public as $$
@@ -10,8 +10,7 @@ language sql security definer set search_path = public as $$
     insert into markets(id, week, grp, label, dec, open_dec, status, result, max_stake, was_dec, legs, updated_at)
     select x->>'id', (x->>'week')::int, x->>'grp', x->>'label', (x->>'dec')::numeric, (x->>'dec')::numeric,
            x->>'status', nullif(x->>'result', ''), (x->>'max_stake')::numeric, (x->>'was_dec')::numeric,
-           case when x ? 'legs' and jsonb_typeof(x->'legs') = 'array'
-                then array(select jsonb_array_elements_text(x->'legs')) end,
+           case when jsonb_typeof(x->'legs') = 'array' then x->'legs' end,
            now()
     from jsonb_array_elements(rows) x
     on conflict (id) do update set
