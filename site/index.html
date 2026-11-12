@@ -238,14 +238,14 @@ function matchRows(m){
     <td>${oddBtn(`${w}:sp:${g}:${side}`,spLine)}</td><td>${oddBtn(`${w}:tot:${g}:${side==='a'?'o':'u'}`,totLbl)}</td><td>${oddBtn(`${w}:ml:${g}:${side}`)}</td></tr>`};
   const L=m.line, fmtL=x=>(x>0?'+':'')+x.toFixed(1);
   return `<tr><td colspan="4" style="padding:0"><div class="gamehead"><span>${stateTxt(m)}</span><button onclick="openMatch(${g})">Props de jugadores ›</button></div></td></tr>`
-   +tr(m.away,'a',fmtL(L),'M '+m.total)+tr(m.home,'h',fmtL(-L),'m '+m.total);
+   +tr(m.away,'a',fmtL(L),'O '+m.total)+tr(m.home,'h',fmtL(-L),'U '+m.total);
 }
 function viewWeek(live){
   const list=D.matchups.filter(m=>!live||m.state!=='open');
   if(live&&!list.length) return `<h1 class="title">En vivo</h1><div class="panel"><p class="note">Ahorita no hay jugadores de la liga en partido. Durante los juegos del jueves, domingo y lunes aquí ves los marcadores y las líneas moviéndose. Mientras haya jugadores de un matchup en la cancha, sus apuestas quedan en pausa y se reabren cuando termina esa tanda de partidos.</p></div>`;
   return `<h1 class="title">${live?'En vivo':'Semana '+D.week+' · Líneas de juego'}</h1>
   <div class="panel"><table class="coupon"><thead><tr><th>Matchup</th><th>Spread</th><th>Total</th><th>Ganador</th></tr></thead><tbody>${list.map(matchRows).join('')}</tbody></table></div>
-  <div class="panel"><p class="note">Las líneas salen del promedio de ${D.sources.join(', ')} para cada titular. Se recalculan todos los días y cada pocos minutos en días de partido. "M" es más de, "m" es menos de.</p></div>`;
+  <div class="panel"><p class="note">Las líneas salen del promedio de ${D.sources.join(', ')} para cada titular. Se recalculan todos los días y cada pocos minutos en días de partido. "O" es over (más de) y "U" es under (menos de).</p></div>`;
 }
 
 /* ---------- vista: matchup ---------- */
@@ -268,14 +268,14 @@ function viewMatch(){
     const fl=x=>(x>0?'+':'')+x.toFixed(1);
     body=panel('ml'+g,'Ganador del matchup',`<div class="prow"><div></div><div class="empty">${esc(ta.name)}</div><div class="empty">${esc(th.name)}</div></div><div class="prow"><div class="who">Moneyline</div>${oddBtn(`${w}:ml:${g}:a`)}${oddBtn(`${w}:ml:${g}:h`)}</div>
       <div class="prow"><div class="who">Spread</div>${oddBtn(`${w}:sp:${g}:a`,fl(m.line))}${oddBtn(`${w}:sp:${g}:h`,fl(-m.line))}</div>`)
-    +panel('tot'+g,'Total de puntos del matchup',`<div class="prow"><div class="who">${m.total} pts</div>${oddBtn(`${w}:tot:${g}:o`,'Más de')}${oddBtn(`${w}:tot:${g}:u`,'Menos de')}</div>`)
+    +panel('tot'+g,'Total de puntos del matchup',`<div class="prow"><div class="who">${m.total} pts</div>${oddBtn(`${w}:tot:${g}:o`,'Over')}${oddBtn(`${w}:tot:${g}:u`,'Under')}</div>`)
     +panel('pp'+g,'Puntos fantasy · titulares',ptsRows(lineup.slice(0,6)) + `<div class="prow"><div></div><button class="btn-g" style="grid-column:span 2" onclick="view.tab='pts';render()">Ver todos los jugadores ›</button></div>`);
   } else if(tab==='pts'){
-    body=[A,H].map(s=>panel('pts'+s.team,esc(team(s.team).name),`<div class="prow"><div></div><div class="empty">Más de</div><div class="empty">Menos de</div></div>`+ptsRows(s.lineup))).join('');
+    body=[A,H].map(s=>panel('pts'+s.team,esc(team(s.team).name),`<div class="prow"><div></div><div class="empty">Over</div><div class="empty">Under</div></div>`+ptsRows(s.lineup))).join('');
   } else if(tab==='td'){
     const sk=lineup.filter(p=>['QB','RB','WR','TE'].includes(p.pos));
     body=panel('td1'+g,'Anota touchdown (TD por tierra o recepción)',`<div class="prow"><div></div><div class="empty">Anota TD</div><div class="empty">2+ TD</div></div>`+sk.map(p=>`<div class="prow">${who(p)}${oddBtn(`${w}:td:${p.id}:1`)}${oddBtn(`${w}:td:${p.id}:2`)}</div>`).join(''))
-     +panel('ptd'+g,'Touchdowns de pase · QB',lineup.filter(p=>p.pos==='QB').map(p=>{const mo=M[`${w}:ptd:${p.id}:o`];const ln=mo?mo.label.match(/([\d.]+) TD/)?.[1]:'';return `<div class="prow">${who(p)}${oddBtn(`${w}:ptd:${p.id}:o`,'Más de '+ln)}${oddBtn(`${w}:ptd:${p.id}:u`,'Menos de '+ln)}</div>`}).join(''));
+     +panel('ptd'+g,'Touchdowns de pase · QB',lineup.filter(p=>p.pos==='QB').map(p=>{const mo=M[`${w}:ptd:${p.id}:o`];const ln=mo?mo.label.match(/([\d.]+) TD/)?.[1]:'';return `<div class="prow">${who(p)}${oddBtn(`${w}:ptd:${p.id}:o`,'Over '+ln)}${oddBtn(`${w}:ptd:${p.id}:u`,'Under '+ln)}</div>`}).join(''));
   } else if(tab==='alt'){
     body=[A,H].map(s=>panel('alt'+s.team,esc(team(s.team).name)+' · ¿Cuántos puntos hace?',s.lineup.map(p=>{
       const ks=D.markets.filter(x=>x.player===p.id&&x.cat==='Escalera de puntos');
@@ -289,7 +289,7 @@ function viewMatch(){
 }
 function who(p){return `<div class="who">${esc(p.name)}<small>${p.pos} · ${esc(p.nfl)} ${esc(p.opp)}${p.inj?' · <span class="lo">'+esc(p.inj)+'</span>':''}${p.state==='in'?' · <span class="live">'+p.actual.toFixed(1)+'</span>':''}</small></div>`}
 function ptsRows(list){const w=D.week;return list.map(p=>{const m=M[`${w}:pts:${p.id}:o`];const ln=m?m.label.match(/([\d.]+) pts/)?.[1]:'';
-  return `<div class="prow">${who(p)}${m?oddBtn(`${w}:pts:${p.id}:o`,'M '+ln)+oddBtn(`${w}:pts:${p.id}:u`,'m '+ln):'<div class="empty" style="grid-column:span 2">'+(p.state==='bye'?'Bye':'Sin línea')+'</div>'}</div>`}).join('')}
+  return `<div class="prow">${who(p)}${m?oddBtn(`${w}:pts:${p.id}:o`,'O '+ln)+oddBtn(`${w}:pts:${p.id}:u`,'U '+ln):'<div class="empty" style="grid-column:span 2">'+(p.state==='bye'?'Bye':'Sin línea')+'</div>'}</div>`}).join('')}
 function plRow(p){const st=p.state==='in'?`<span class="live">${esc(p.detail)}</span>`:p.state==='post'?'Final':p.state==='bye'?'Bye':timeStr(p.kick);
   return `<button class="pl" onclick="view.player=${p.id};render();setTimeout(()=>document.getElementById('pcard')?.scrollIntoView({behavior:'smooth'}),30)"><span class="sl">${p.slot}</span><span class="nm">${esc(p.name)}<small>${esc(p.nfl)} ${esc(p.opp)} · ${st}${p.inj?' · <span class="lo">'+esc(p.inj)+'</span>':''}</small></span>
   <span class="pt">${p.state==='pre'||p.state==='bye'?p.proj.toFixed(1):p.actual.toFixed(1)}<small>${p.state==='pre'?'proy.':'pts'}</small></span></button>`}

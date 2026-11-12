@@ -290,8 +290,8 @@ def build_week(week, current_week, teams, proteams):
             (f"{week}:ml:{gid}:a", grp, f"{an} gana", 1 - p_home, VIG2, res(winner == "AWAY", winner == "TIE")),
             (f"{week}:sp:{gid}:h", grp, f"{hn} {-line:+.1f}", p_home_cover, VIG2, res(hf - af > line)),
             (f"{week}:sp:{gid}:a", grp, f"{an} {line:+.1f}", 1 - p_home_cover, VIG2, res(hf - af < line)),
-            (f"{week}:tot:{gid}:o", f"{week}:t{gid}", f"Más de {tot} pts ({hn} vs {an})", p_over, VIG2, res(hf + af > tot)),
-            (f"{week}:tot:{gid}:u", f"{week}:t{gid}", f"Menos de {tot} pts ({hn} vs {an})", 1 - p_over, VIG2, res(hf + af < tot)),
+            (f"{week}:tot:{gid}:o", f"{week}:t{gid}", f"Over {tot} pts ({hn} vs {an})", p_over, VIG2, res(hf + af > tot)),
+            (f"{week}:tot:{gid}:u", f"{week}:t{gid}", f"Under {tot} pts ({hn} vs {an})", 1 - p_over, VIG2, res(hf + af < tot)),
         ]
         for mid, g_, label, p, vig, r in mk:
             markets.append(dict(id=mid, week=week, grp=g_, label=label, dec=to_dec(p, vig),
@@ -324,8 +324,8 @@ def player_markets(week, pl, teams):
         return "push" if void else ("win" if cond else "loss")
     line = half(mu)
     p_over = 1 - phi((line - mu) / sd)
-    out.append((f"{week}:pts:{pl['id']}:o", f"{who} más de {line} pts", p_over, VIG2, res(act > line), "Puntos fantasy"))
-    out.append((f"{week}:pts:{pl['id']}:u", f"{who} menos de {line} pts", 1 - p_over, VIG2, res(act < line), "Puntos fantasy"))
+    out.append((f"{week}:pts:{pl['id']}:o", f"{who} over {line} pts", p_over, VIG2, res(act > line), "Puntos fantasy"))
+    out.append((f"{week}:pts:{pl['id']}:u", f"{who} under {line} pts", 1 - p_over, VIG2, res(act < line), "Puntos fantasy"))
     for k in range(5, 60, 5):
         p = 1 - phi((k - 0.5 - mu) / sd)
         if 0.07 <= p <= 0.80 and abs(k - line) >= 2:
@@ -341,9 +341,9 @@ def player_markets(week, pl, teams):
         lam = pl["ptd"]
         pl_line = 1.5 if lam < 2.0 else 2.5
         p = poisson_ge(lam, int(pl_line + 0.5))
-        out.append((f"{week}:ptd:{pl['id']}:o", f"{who} más de {pl_line} TD de pase", p, VIG2,
+        out.append((f"{week}:ptd:{pl['id']}:o", f"{who} over {pl_line} TD de pase", p, VIG2,
                     res(pl["act_ptd"] > pl_line), "Touchdowns"))
-        out.append((f"{week}:ptd:{pl['id']}:u", f"{who} menos de {pl_line} TD de pase", 1 - p, VIG2,
+        out.append((f"{week}:ptd:{pl['id']}:u", f"{who} under {pl_line} TD de pase", 1 - p, VIG2,
                     res(pl["act_ptd"] < pl_line), "Touchdowns"))
     return [dict(id=i, week=week, grp=grp, label=l, dec=to_dec(p, v), prob=round(p, 4),
                  status=status if r is None else "closed", result=r, cat=c, player=pl["id"])
