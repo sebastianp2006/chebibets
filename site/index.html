@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ChebiBets</title>
+<meta name="theme-color" content="#126e51">
+<style>
+:root{--bg:#1f2224;--panel:#2a2e31;--row:#33383c;--row2:#2e3236;--btn:#41474c;--btnh:#4d545a;--line:#3d4347;
+--green:#126e51;--green2:#0e5a42;--sel:#1b8a63;--yellow:#ffdf1b;--text:#fff;--muted:#a3abb1;--red:#e0605a;--ok:#4fd18b}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+input,select{font:inherit}
+.top{background:var(--green);position:sticky;top:0;z-index:30;box-shadow:0 2px 6px #0006}
+.bar{display:flex;align-items:center;gap:14px;max-width:1320px;margin:auto;padding:0 14px;height:52px}
+.logo{font-weight:900;font-size:21px;letter-spacing:-.5px;white-space:nowrap}.logo b{color:var(--yellow)}
+.nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1}.nav::-webkit-scrollbar{display:none}
+.nav button{padding:16px 12px;font-weight:600;white-space:nowrap;color:#d9efe6;border-bottom:3px solid transparent}
+.nav button.on{color:#fff;border-bottom-color:var(--yellow)}
+.acct{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.bal{background:var(--green2);padding:6px 10px;border-radius:4px;font-weight:700}
+.btn-y{background:var(--yellow);color:#111;font-weight:800;padding:8px 14px;border-radius:4px}
+.btn-g{background:var(--btn);padding:8px 12px;border-radius:4px}.btn-g:hover{background:var(--btnh)}
+.sub{background:#1a1c1e;border-bottom:1px solid var(--line)}
+.sub .bar{height:auto;padding:7px 14px;font-size:12px;color:var(--muted);flex-wrap:wrap;gap:6px 14px}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:5px}
+.wrap{max-width:1320px;margin:auto;display:grid;grid-template-columns:220px minmax(0,1fr) 320px;gap:12px;padding:12px 14px 90px}
+.side{position:sticky;top:64px;align-self:start}
+.side h4{margin:0;padding:10px 12px;background:var(--panel);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.side button{display:block;width:100%;text-align:left;padding:9px 12px;background:var(--row2);border-bottom:1px solid var(--line);font-size:13px}
+.side button:hover{background:var(--row)}.side button small{display:block;color:var(--muted);font-size:11px}
+.panel{background:var(--panel);border-radius:4px;overflow:hidden;margin-bottom:12px}
+.ph{display:flex;justify-content:space-between;align-items:center;padding:11px 12px;background:#24282b;font-weight:700;cursor:pointer;user-select:none}
+.ph .chev{transition:transform .15s;color:var(--muted)}.panel.closed .chev{transform:rotate(-90deg)}.panel.closed .pb{display:none}
+.ph small{color:var(--muted);font-weight:400;margin-left:6px}
+h1.title{font-size:20px;margin:4px 0 10px}
+.coupon{width:100%;border-collapse:collapse}
+.coupon th{font-size:11px;color:var(--muted);font-weight:600;text-align:center;padding:6px 4px;background:var(--row2)}
+.coupon th:first-child{text-align:left;padding-left:12px}
+.coupon td{padding:3px;border-top:1px solid var(--line);vertical-align:middle}
+.coupon td.tm{padding:8px 12px;cursor:pointer}
+.tm .n{font-weight:600;display:flex;align-items:center;gap:7px}
+.tm img{width:20px;height:20px;border-radius:50%;object-fit:cover;background:#0003}
+.tm .s{font-size:11px;color:var(--muted)}
+.tm .sc{margin-left:auto;font-weight:800;color:var(--yellow)}
+.gamehead{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;font-size:11px;color:var(--muted);background:#262a2d;border-top:1px solid var(--line)}
+.gamehead button{color:var(--yellow);font-size:12px;font-weight:600}
+.odd{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;min-height:44px;background:var(--btn);border-radius:3px;padding:4px 2px;transition:background .1s}
+.odd:hover{background:var(--btnh)}.odd .l{font-size:11px;color:#d6dbde}.odd .o{font-weight:800;color:var(--yellow)}
+.odd.on{background:var(--sel)}.odd.on .o{color:#fff}
+.odd.lock{opacity:.45;cursor:not-allowed}.odd.lock .o::before{content:"🔒 ";font-size:10px}
+.odd.row{flex-direction:row;justify-content:space-between;padding:0 12px}
+.odd.up .o{animation:up 2s}.odd.dn .o{animation:dn 2s}
+@keyframes up{0%{color:var(--ok)}100%{}}@keyframes dn{0%{color:var(--red)}100%{}}
+.grid{display:grid;gap:4px;padding:8px}
+.prow{display:grid;grid-template-columns:minmax(0,1.3fr) 1fr 1fr;gap:4px;align-items:center;padding:3px 8px}
+.prow .who{font-size:13px;font-weight:600;min-width:0}.prow .who small{display:block;color:var(--muted);font-weight:400;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ladder{display:grid;grid-template-columns:minmax(0,1.3fr) repeat(6,1fr);gap:4px;align-items:center;padding:3px 8px}
+.ladder.hd{font-size:11px;color:var(--muted);text-align:center}.ladder.hd span:first-child{text-align:left}
+.empty{color:var(--muted);text-align:center;padding:4px;font-size:12px}
+.mhead{background:linear-gradient(135deg,var(--green2),#173a2f);border-radius:4px;padding:16px;margin-bottom:12px}
+.mhead .vs{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;text-align:center}
+.mhead img{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#0003}
+.mhead .nm{font-weight:800;font-size:16px;margin-top:4px}.mhead .big{font-size:30px;font-weight:900;color:var(--yellow)}
+.mhead .pj{font-size:12px;color:#cfe5dc}
+.probbar{display:flex;height:6px;border-radius:3px;overflow:hidden;margin:14px 0 4px;background:#0004}.probbar div{background:var(--yellow)}
+.probtxt{display:flex;justify-content:space-between;font-size:12px;color:#cfe5dc}
+.back{color:var(--yellow);font-weight:600;margin-bottom:8px;display:inline-block}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tabs button{padding:8px 14px;background:var(--panel);border-radius:18px;white-space:nowrap;font-weight:600;font-size:13px;color:var(--muted)}
+.tabs button.on{background:var(--yellow);color:#111}
+.roster{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
+.roster>div{background:var(--panel)}
+.pl{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--line);cursor:pointer;width:100%;text-align:left}
+.pl:hover{background:var(--row)}.pl .sl{width:38px;font-size:11px;color:var(--muted);font-weight:700}
+.pl .nm{flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl .nm small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+.pl .pt{font-weight:800;text-align:right;font-size:13px}.pl .pt small{display:block;color:var(--muted);font-weight:400;font-size:10px}
+.live{color:var(--red);font-weight:800;font-size:11px}.live::before{content:"● "}
+.tag{font-size:10px;padding:2px 6px;border-radius:3px;background:var(--btn);color:var(--muted);font-weight:700;text-transform:uppercase}
+.tag.r{background:#5a2422;color:#ffb0aa}.tag.g{background:#174d36;color:#9be8c0}
+.srcs{display:flex;gap:6px;flex-wrap:wrap;padding:10px 12px;font-size:12px;color:var(--muted)}.srcs span{background:var(--row);padding:4px 8px;border-radius:3px}.srcs b{color:var(--text)}
+/* boleto */
+.slip{position:sticky;top:64px;align-self:start;background:var(--panel);border-radius:4px;overflow:hidden}
+.slip .sh{background:var(--green);padding:11px 12px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+.slip .cnt{background:var(--yellow);color:#111;border-radius:10px;padding:0 7px;font-size:12px;margin-left:6px}
+.leg{padding:10px 12px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:start}
+.leg .lb{font-size:13px;font-weight:600}.leg .lb small{display:block;color:var(--muted);font-weight:400;font-size:11px}
+.leg .o{font-weight:800;color:var(--yellow)}.leg.bad{opacity:.5}.leg.chg .o{color:var(--ok)}
+.leg .x{color:var(--muted);font-size:18px;line-height:1}
+.slipbody{max-height:calc(100vh - 340px);overflow:auto}
+.slipfoot{padding:12px;background:#24282b}
+.stake{display:flex;align-items:center;background:#fff;color:#111;border-radius:4px;overflow:hidden}
+.stake span{padding:0 4px 0 10px;font-weight:700}.stake input{flex:1;border:0;padding:10px 10px 10px 0;font-weight:700;font-size:16px;outline:none;width:100%}
+.qs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:8px 0}.qs button{background:var(--btn);padding:7px 0;border-radius:3px;font-size:12px;font-weight:600}
+.sumrow{display:flex;justify-content:space-between;font-size:13px;margin:5px 0;color:var(--muted)}.sumrow b{color:var(--text)}
+.place{width:100%;background:var(--yellow);color:#111;font-weight:900;padding:13px;border-radius:4px;margin-top:8px;font-size:15px}
+.place:disabled{opacity:.5;cursor:not-allowed}
+.msg{font-size:12px;margin-top:8px;padding:8px;border-radius:3px;display:none}.msg.on{display:block}.msg.err{background:#5a2422;color:#ffd1cd}.msg.okm{background:#174d36;color:#c4f5da}
+.slipempty{padding:24px 14px;text-align:center;color:var(--muted);font-size:13px}
+.mslip{display:none}
+/* apuestas, tabla */
+.bet{border-top:1px solid var(--line);padding:10px 12px}
+.bet .bh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:var(--muted)}
+.bet ul{list-style:none;margin:0;padding:0}.bet li{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:2px 0}
+.bet li .r{font-size:11px;font-weight:700}.w{color:var(--ok)}.lo{color:var(--red)}
+.bet .bf{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}.bet .bf b{color:var(--text)}
+table.lb{width:100%;border-collapse:collapse}table.lb td,table.lb th{padding:9px 12px;border-top:1px solid var(--line);text-align:left}
+table.lb th{font-size:11px;color:var(--muted);font-weight:600;background:var(--row2)}table.lb td.n{text-align:right;font-variant-numeric:tabular-nums}
+.house{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line)}
+.house div{background:var(--panel);padding:12px}.house small{color:var(--muted);font-size:11px;display:block}.house b{font-size:18px}
+.note{font-size:12px;color:var(--muted);padding:10px 12px;line-height:1.5}
+/* modal */
+.modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:60;padding:16px}
+.modal.on{display:flex}.box{background:var(--panel);border-radius:6px;width:100%;max-width:380px;overflow:hidden}
+.box .sh{background:var(--green);padding:12px 14px;font-weight:800;display:flex;justify-content:space-between}
+.box .bd{padding:14px}.box label{font-size:12px;color:var(--muted);display:block;margin:10px 0 4px}
+.box select,.box input{width:100%;padding:11px;border-radius:4px;border:1px solid var(--line);background:#1a1c1e;color:#fff;font-size:16px}
+.fmt{display:flex;background:var(--green2);border-radius:4px;overflow:hidden}.fmt button{padding:6px 9px;font-size:12px;font-weight:700;color:#cfe5dc}.fmt button.on{background:var(--yellow);color:#111}
+@media(max-width:1180px){.wrap{grid-template-columns:minmax(0,1fr) 310px}.side{display:none}}
+@media(max-width:820px){
+ .wrap{grid-template-columns:1fr;padding:10px 10px 90px}.slip{display:none}
+ .top .bar{flex-wrap:wrap;height:auto;padding:8px 10px 0;gap:0 8px}.logo{font-size:19px}
+ .acct{margin-left:auto}.nav{order:3;flex-basis:100%}.nav button{padding:11px 10px;font-size:13px}
+ .coupon{table-layout:fixed}.coupon th:first-child{width:37%;padding-left:8px}
+ .tm .n{min-width:0;font-size:13px}.tm .n span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+ .tm .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tm img{display:none}
+ .odd .l{font-size:10px}.odd .o{font-size:13px}
+ .acct .fmt{display:none}.hide-m{display:none}
+ .mslip{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--green);padding:10px 14px calc(10px + env(safe-area-inset-bottom));justify-content:space-between;align-items:center;font-weight:800;box-shadow:0 -2px 8px #0007}
+ .mslip.empty{display:none}
+ .slip.open{display:block;position:fixed;inset:auto 0 0 0;top:auto;z-index:50;max-height:88vh;border-radius:10px 10px 0 0;overflow:auto;padding-bottom:env(safe-area-inset-bottom)}
+ .slip.open .slipbody{max-height:none}
+ .roster{grid-template-columns:1fr}
+ .ladder{grid-template-columns:minmax(0,1.4fr) repeat(4,1fr)}.ladder .x5,.ladder .x6{display:none}
+ .mhead .big{font-size:24px}.coupon td.tm{padding:7px 8px}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="bar">
+  <div class="logo">Chebi<b>Bets</b></div>
+  <nav class="nav" id="nav">
+    <button data-v="week" class="on">Semana</button>
+    <button data-v="live">En vivo</button>
+    <button data-v="futures">Futuros</button>
+    <button data-v="mybets">Mis apuestas</button>
+    <button data-v="board">Tabla</button>
+  </nav>
+  <div class="acct">
+    <div class="fmt" id="fmt"><button data-f="us" class="on">+150</button><button data-f="dec">2.50</button></div>
+    <span id="acct"></span>
+  </div>
+</div></header>
+<div class="sub"><div class="bar" id="subbar"></div></div>
+
+<div class="wrap">
+  <aside class="side" id="side"></aside>
+  <main id="main"></main>
+  <aside class="slip" id="slip">
+    <div class="sh"><span>Boleto<span class="cnt" id="cnt">0</span></span><button id="clear" style="font-size:12px;color:#cfe5dc">Borrar todo</button></div>
+    <div class="slipbody" id="legs"></div>
+    <div class="slipfoot" id="slipfoot"></div>
+  </aside>
+</div>
+<div class="mslip empty" id="mslip"><span>Boleto <span class="cnt" id="mcnt">0</span></span><span id="modds"></span></div>
+
+<div class="modal" id="login"><div class="box">
+  <div class="sh"><span>Entrar a ChebiBets</span><button onclick="closeLogin()">✕</button></div>
+  <div class="bd">
+    <label>Tu equipo de la liga</label><select id="lgTeam"></select>
+    <label>PIN (4 a 6 números)</label><input id="lgPin" type="password" inputmode="numeric" maxlength="6" autocomplete="off">
+    <p class="note" style="padding:8px 0 0">La primera vez que entras, el PIN que pongas queda como el tuyo y recibes <b>$10,000</b> de dinero de juego. Después usa el mismo PIN.</p>
+    <button class="place" id="lgGo">Entrar</button><div class="msg" id="lgMsg"></div>
+  </div>
+</div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>'$'+Number(n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+let D=null, M={}, view={v:'week'}, slip=store.get('cb_slip',[]), fmt=store.get('cb_fmt','us'), user=store.get('cb_user',null), prevDec={};
+let openPanels=store.get('cb_panels',{});
+
+function odds(dec){if(!dec)return'—';if(fmt==='dec')return Number(dec).toFixed(2);return dec>=2?'+'+Math.round((dec-1)*100):'-'+Math.round(100/(dec-1))}
+const team=id=>D.teams[id]||{name:'?'};
+const logo=t=>t.logo?`<img src="${esc(t.logo)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`:'';
+const timeStr=iso=>iso?new Date(iso).toLocaleString('es-MX',{weekday:'short',hour:'numeric',minute:'2-digit'}):'';
+
+async function load(first){
+  try{
+    const r=await fetch('data.json?t='+Date.now(),{cache:'no-store'});
+    const nd=await r.json();
+    if(D) for(const m of D.markets) prevDec[m.id]=m.dec;
+    D=nd; M={}; for(const m of D.markets) M[m.id]=m;
+    syncSlip(); render();
+  }catch(e){ if(first) $('main').innerHTML='<div class="panel"><p class="note">No se pudieron cargar las líneas. Intenta de nuevo en un momento.</p></div>' }
+}
+
+function syncSlip(){
+  slip.forEach(s=>{const m=M[s.id]; if(!m){s.gone=true;return} s.gone=false; if(m.dec!==s.dec){s.changed=true;s.dec=m.dec} s.status=m.status; s.label=m.label});
+  store.set('cb_slip',slip);
+}
+
+/* ---------- encabezado ---------- */
+function renderTop(){
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===(view.v==='match'?'week':view.v)));
+  const upd=new Date(D.updated);
+  $('subbar').innerHTML=`<span><span class="dot"></span><b style="color:#fff">${esc(D.league)}</b></span><span>Semana ${D.week}</span>
+   <span>Líneas actualizadas ${upd.toLocaleString('es-MX',{weekday:'short',hour:'numeric',minute:'2-digit'})}</span>
+   <span class="hide-m">Proyecciones: ${D.sources.map(esc).join(' · ')}</span><span class="hide-m">Dinero de juego</span>`;
+  $('acct').innerHTML=user?`<span class="bal" title="${esc(team(user.team).name)}">${money(user.balance)}</span><button class="btn-g" onclick="logout()" title="Salir">⎋</button>`
+    :`<button class="btn-y" onclick="openLogin()">Entrar</button>`;
+  document.querySelectorAll('#fmt button').forEach(b=>b.classList.toggle('on',b.dataset.f===fmt));
+}
+
+function renderSide(){
+  $('side').innerHTML='<h4>Matchups · Semana '+D.week+'</h4>'+D.matchups.map(m=>`<button onclick="openMatch(${m.id})">${esc(team(m.away.team).name)}<br>${esc(team(m.home.team).name)}<small>${stateTxt(m)}</small></button>`).join('')
+   +'<h4 style="margin-top:12px">Futuros</h4>'+FUT.map(f=>`<button onclick="go('futures','${f[0]}')">${f[1]}</button>`).join('');
+}
+const stateTxt=m=>m.state==='suspended'?'<span class="live">EN VIVO</span> · apuestas en pausa':m.state==='closed'?'Terminado':'Abierto';
+
+/* ---------- botón de momio ---------- */
+function oddBtn(id,line,cls=''){
+  const m=M[id]; if(!m) return '<div class="empty">—</div>';
+  const on=slip.some(s=>s.id===id), lock=m.status!=='open';
+  const mv=prevDec[id]&&prevDec[id]!==m.dec?(m.dec>prevDec[id]?' up':' dn'):'';
+  return `<button class="odd ${cls}${on?' on':''}${lock?' lock':''}${mv}" ${lock?'disabled':''} onclick="pick('${id}')" title="${esc(m.label)}">${line!=null?`<span class="l">${esc(line)}</span>`:''}<span class="o">${odds(m.dec)}</span></button>`;
+}
+
+/* ---------- vista: semana ---------- */
+function matchRows(m){
+  const w=D.week, g=m.id, sc=s=>m.state==='open'?'':`<span class="sc">${s.live.toFixed(1)}</span>`;
+  const tr=(s,side,spLine,totLbl)=>{const t=team(s.team);return `<tr>
+    <td class="tm" onclick="openMatch(${g})"><div class="n">${logo(t)}<span>${esc(t.name)}</span>${sc(s)}</div><div class="s">${t.w}-${t.l} · proy. ${s.mean.toFixed(1)}</div></td>
+    <td>${oddBtn(`${w}:sp:${g}:${side}`,spLine)}</td><td>${oddBtn(`${w}:tot:${g}:${side==='a'?'o':'u'}`,totLbl)}</td><td>${oddBtn(`${w}:ml:${g}:${side}`)}</td></tr>`};
+  const L=m.line, fmtL=x=>(x>0?'+':'')+x.toFixed(1);
+  return `<tr><td colspan="4" style="padding:0"><div class="gamehead"><span>${stateTxt(m)}</span><button onclick="openMatch(${g})">Props de jugadores ›</button></div></td></tr>`
+   +tr(m.away,'a',fmtL(L),'M '+m.total)+tr(m.home,'h',fmtL(-L),'m '+m.total);
+}
+function viewWeek(live){
+  const list=D.matchups.filter(m=>!live||m.state!=='open');
+  if(live&&!list.length) return `<h1 class="title">En vivo</h1><div class="panel"><p class="note">Ahorita no hay jugadores de la liga en partido. Durante los juegos del jueves, domingo y lunes aquí ves los marcadores y las líneas moviéndose. Mientras haya jugadores de un matchup en la cancha, sus apuestas quedan en pausa y se reabren cuando termina esa tanda de partidos.</p></div>`;
+  return `<h1 class="title">${live?'En vivo':'Semana '+D.week+' · Líneas de juego'}</h1>
+  <div class="panel"><table class="coupon"><thead><tr><th>Matchup</th><th>Spread</th><th>Total</th><th>Ganador</th></tr></thead><tbody>${list.map(matchRows).join('')}</tbody></table></div>
+  <div class="panel"><p class="note">Las líneas salen del promedio de ${D.sources.join(', ')} para cada titular. Se recalculan todos los días y cada pocos minutos en días de partido. "M" es más de, "m" es menos de.</p></div>`;
+}
+
+/* ---------- vista: matchup ---------- */
+function viewMatch(){
+  const m=D.matchups.find(x=>x.id===view.id); if(!m) return viewWeek();
+  const A=m.away,H=m.home,ta=team(A.team),th=team(H.team),pa=1-m.pHome;
+  const tab=view.tab||'lines';
+  const lineup=[...A.lineup,...H.lineup];
+  const head=`<button class="back" onclick="go('week')">‹ Todos los matchups</button>
+  <div class="mhead"><div class="vs">
+    <div>${logo(ta)}<div class="nm">${esc(ta.name)}</div><div class="big">${m.state==='open'?A.mean.toFixed(1):A.live.toFixed(1)}</div><div class="pj">${m.state==='open'?'proyectado':'proy. final '+A.mean.toFixed(1)}</div></div>
+    <div style="color:#cfe5dc;font-weight:700">VS<br><small>${stateTxt(m)}</small></div>
+    <div>${logo(th)}<div class="nm">${esc(th.name)}</div><div class="big">${m.state==='open'?H.mean.toFixed(1):H.live.toFixed(1)}</div><div class="pj">${m.state==='open'?'proyectado':'proy. final '+H.mean.toFixed(1)}</div></div>
+  </div><div class="probbar"><div style="width:${(pa*100).toFixed(1)}%"></div></div>
+  <div class="probtxt"><span>${(pa*100).toFixed(0)}% de ganar</span><span>${(m.pHome*100).toFixed(0)}%</span></div></div>
+  <div class="tabs">${[['lines','Líneas'],['pts','Puntos fantasy'],['td','Touchdowns'],['alt','Escaleras'],['lineups','Alineaciones']].map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="view.tab='${k}';render()">${l}</button>`).join('')}</div>`;
+  let body='';
+  const w=D.week,g=m.id;
+  if(tab==='lines'){
+    const fl=x=>(x>0?'+':'')+x.toFixed(1);
+    body=panel('ml'+g,'Ganador del matchup',`<div class="prow"><div></div><div class="empty">${esc(ta.name)}</div><div class="empty">${esc(th.name)}</div></div><div class="prow"><div class="who">Moneyline</div>${oddBtn(`${w}:ml:${g}:a`)}${oddBtn(`${w}:ml:${g}:h`)}</div>
+      <div class="prow"><div class="who">Spread</div>${oddBtn(`${w}:sp:${g}:a`,fl(m.line))}${oddBtn(`${w}:sp:${g}:h`,fl(-m.line))}</div>`)
+    +panel('tot'+g,'Total de puntos del matchup',`<div class="prow"><div class="who">${m.total} pts</div>${oddBtn(`${w}:tot:${g}:o`,'Más de')}${oddBtn(`${w}:tot:${g}:u`,'Menos de')}</div>`)
+    +panel('pp'+g,'Puntos fantasy · titulares',ptsRows(lineup.slice(0,6)) + `<div class="prow"><div></div><button class="btn-g" style="grid-column:span 2" onclick="view.tab='pts';render()">Ver todos los jugadores ›</button></div>`);
+  } else if(tab==='pts'){
+    body=[A,H].map(s=>panel('pts'+s.team,esc(team(s.team).name),`<div class="prow"><div></div><div class="empty">Más de</div><div class="empty">Menos de</div></div>`+ptsRows(s.lineup))).join('');
+  } else if(tab==='td'){
+    const sk=lineup.filter(p=>['QB','RB','WR','TE'].includes(p.pos));
+    body=panel('td1'+g,'Anota touchdown (TD por tierra o recepción)',`<div class="prow"><div></div><div class="empty">Anota TD</div><div class="empty">2+ TD</div></div>`+sk.map(p=>`<div class="prow">${who(p)}${oddBtn(`${w}:td:${p.id}:1`)}${oddBtn(`${w}:td:${p.id}:2`)}</div>`).join(''))
+     +panel('ptd'+g,'Touchdowns de pase · QB',lineup.filter(p=>p.pos==='QB').map(p=>{const mo=M[`${w}:ptd:${p.id}:o`];const ln=mo?mo.label.match(/([\d.]+) TD/)?.[1]:'';return `<div class="prow">${who(p)}${oddBtn(`${w}:ptd:${p.id}:o`,'Más de '+ln)}${oddBtn(`${w}:ptd:${p.id}:u`,'Menos de '+ln)}</div>`}).join(''));
+  } else if(tab==='alt'){
+    body=[A,H].map(s=>panel('alt'+s.team,esc(team(s.team).name)+' · ¿Cuántos puntos hace?',s.lineup.map(p=>{
+      const ks=D.markets.filter(x=>x.player===p.id&&x.cat==='Escalera de puntos');
+      if(!ks.length) return '';
+      return `<div class="ladder">${who(p)}${ks.slice(0,6).map((x,i)=>`<div class="x${i+1}">${oddBtn(x.id,x.label.match(/(\d+)\+/)[1]+'+')}</div>`).join('')}</div>`}).join('')||'<p class="note">Sin escaleras disponibles.</p>')).join('');
+  } else {
+    body=`<div class="panel"><div class="roster">${[A,H].map(s=>`<div><div class="ph" style="cursor:default">${esc(team(s.team).name)}</div>${s.lineup.map(plRow).join('')}</div>`).join('')}</div>
+      <p class="note">Toca un jugador para ver de dónde sale su proyección. Los puntos en vivo vienen de ESPN.</p></div>`;
+  }
+  return head+body+(view.player?playerCard(lineup.find(p=>p.id===view.player)):'');
+}
+function who(p){return `<div class="who">${esc(p.name)}<small>${p.pos} · ${esc(p.nfl)} ${esc(p.opp)}${p.inj?' · <span class="lo">'+esc(p.inj)+'</span>':''}${p.state==='in'?' · <span class="live">'+p.actual.toFixed(1)+'</span>':''}</small></div>`}
+function ptsRows(list){const w=D.week;return list.map(p=>{const m=M[`${w}:pts:${p.id}:o`];const ln=m?m.label.match(/([\d.]+) pts/)?.[1]:'';
+  return `<div class="prow">${who(p)}${m?oddBtn(`${w}:pts:${p.id}:o`,'M '+ln)+oddBtn(`${w}:pts:${p.id}:u`,'m '+ln):'<div class="empty" style="grid-column:span 2">'+(p.state==='bye'?'Bye':'Sin línea')+'</div>'}</div>`}).join('')}
+function plRow(p){const st=p.state==='in'?`<span class="live">${esc(p.detail)}</span>`:p.state==='post'?'Final':p.state==='bye'?'Bye':timeStr(p.kick);
+  return `<button class="pl" onclick="view.player=${p.id};render();setTimeout(()=>document.getElementById('pcard')?.scrollIntoView({behavior:'smooth'}),30)"><span class="sl">${p.slot}</span><span class="nm">${esc(p.name)}<small>${esc(p.nfl)} ${esc(p.opp)} · ${st}${p.inj?' · <span class="lo">'+esc(p.inj)+'</span>':''}</small></span>
+  <span class="pt">${p.state==='pre'||p.state==='bye'?p.proj.toFixed(1):p.actual.toFixed(1)}<small>${p.state==='pre'?'proy.':'pts'}</small></span></button>`}
+function playerCard(p){if(!p)return'';const mk=D.markets.filter(x=>x.player===p.id);
+  return `<div id="pcard">`+panel('pc'+p.id,esc(p.name)+' <small>'+p.pos+' · '+esc(p.nfl)+' '+esc(p.opp)+'</small>',
+   `<div class="srcs">${Object.entries(p.src).map(([k,v])=>`<span>${esc(k)} <b>${v.toFixed(1)}</b></span>`).join('')}<span>Consenso <b>${p.proj.toFixed(1)}</b></span><span>TD esperados <b>${p.td.toFixed(2)}</b></span></div>
+    <div class="grid">${mk.map(x=>`<div class="prow" style="grid-template-columns:1fr 110px;padding:0"><div class="who">${esc(x.label)}<small>${esc(x.cat)}</small></div>${oddBtn(x.id)}</div>`).join('')||'<p class="note">Ya no hay mercados para este jugador.</p>'}</div>`)+'</div>';
+}
+
+/* ---------- vista: futuros ---------- */
+const FUT=[['champ','Campeón'],['po','Entra / no entra a playoffs'],['last','Último lugar'],['mostpf','Más puntos a favor'],['leastpf','Menos puntos a favor']];
+function viewFutures(){
+  const rows=(k)=>D.futures.slice().sort((a,b)=>(b[k]??0)-(a[k]??0));
+  const tline=(f,extra)=>{const t=team(f.team);return `<div class="who" style="display:flex;gap:8px;align-items:center">${logo(t)}<span>${esc(t.name)}<small>${f.w}-${t.l} · ${f.pf.toFixed(1)} PF</small></span></div>`};
+  const tab=view.tab||'champ';
+  const body={
+   champ:()=>panel('fc','Campeón de la liga',rows('champ').map(f=>`<div class="prow" style="grid-template-columns:1fr 120px">${tline(f)}${oddBtn('F:champ:'+f.team)}</div>`).join('')),
+   po:()=>panel('fp',`Entra a playoffs (top ${D.playoffTeams})`,`<div class="prow"><div></div><div class="empty">Sí entra</div><div class="empty">No entra</div></div>`+rows('playoffs').map(f=>`<div class="prow">${tline(f)}${oddBtn('F:playoffs:'+f.team)}${oddBtn('F:miss:'+f.team)}</div>`).join('')),
+   last:()=>panel('fl','Último lugar de la temporada regular',rows('last').map(f=>`<div class="prow" style="grid-template-columns:1fr 120px">${tline(f)}${oddBtn('F:last:'+f.team)}</div>`).join('')),
+   mostpf:()=>panel('fm','Más puntos a favor (temporada regular)',rows('mostpf').map(f=>`<div class="prow" style="grid-template-columns:1fr 120px">${tline(f)}${oddBtn('F:mostpf:'+f.team)}</div>`).join('')),
+   leastpf:()=>panel('fn','Menos puntos a favor (temporada regular)',rows('leastpf').map(f=>`<div class="prow" style="grid-template-columns:1fr 120px">${tline(f)}${oddBtn('F:leastpf:'+f.team)}</div>`).join('')),
+  }[tab]();
+  return `<h1 class="title">Futuros</h1><div class="tabs">${FUT.map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="go('futures','${k}')">${l}</button>`).join('')}</div>${body}
+  <div class="panel"><p class="note">Los momios salen de simular ${'20,000'} veces lo que resta de la temporada, con la fuerza de cada equipo (lo que lleva anotando y su alineación actual), el calendario de ESPN y el desempate por puntos a favor. Si un mercado ya está decidido desaparece. Se pagan al terminar la temporada regular (el campeón, al terminar la final).</p></div>`;
+}
+
+/* ---------- vistas: mis apuestas y tabla ---------- */
+let myCache=null, boardCache=null;
+function legRes(r){return r==='win'?'<span class="r w">✓</span>':r==='loss'?'<span class="r lo">✗</span>':r==='push'?'<span class="r">Nula</span>':'<span class="r" style="color:var(--muted)">•</span>'}
+function betCard(b,showName){const st={open:'<span class="tag">Abierta</span>',won:'<span class="tag g">Ganada</span>',lost:'<span class="tag r">Perdida</span>',push:'<span class="tag">Anulada</span>'}[b.status];
+  const legs=b.legs||[];
+  return `<div class="bet"><div class="bh"><span>${showName?'<b style="color:#fff">'+esc(b.name)+'</b> · ':''}${legs.length>1?'Parlay de '+legs.length:'Sencilla'} · ${new Date(b.created_at).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}</span>${st}</div>
+  <ul>${legs.map(l=>typeof l==='string'?`<li><span>${esc(l)}</span></li>`:`<li><span>${esc(l.label)}</span><span>${odds(l.dec)} ${legRes(l.result)}</span></li>`).join('')}</ul>
+  <div class="bf"><span>Apuesta <b>${money(b.stake)}</b> · momio <b>${odds(b.dec)}</b></span><span>${b.status==='open'?'Para ganar <b>'+money(b.stake*b.dec)+'</b>':b.status==='lost'?'<b class="lo">-'+money(b.stake)+'</b>':'Pagó <b class="w">'+money(b.payout)+'</b>'}</span></div></div>`}
+function viewMyBets(){
+  if(!user) return `<h1 class="title">Mis apuestas</h1><div class="panel"><p class="note">Entra con tu equipo para ver tus boletos.</p><div style="padding:0 12px 12px"><button class="btn-y" onclick="openLogin()">Entrar</button></div></div>`;
+  if(!myCache){fetchMine();return '<h1 class="title">Mis apuestas</h1><div class="panel"><p class="note">Cargando…</p></div>'}
+  const tab=view.tab||'open', list=myCache.bets.filter(b=>tab==='open'?b.status==='open':b.status!=='open');
+  return `<h1 class="title">Mis apuestas</h1><div class="tabs"><button class="${tab==='open'?'on':''}" onclick="go('mybets','open')">Abiertas</button><button class="${tab==='set'?'on':''}" onclick="go('mybets','set')">Liquidadas</button></div>
+  <div class="panel">${list.map(b=>betCard(b)).join('')||'<p class="note">'+(tab==='open'?'No tienes boletos abiertos.':'Todavía no se liquida ningún boleto tuyo.')+'</p>'}</div>`;
+}
+function viewBoard(){
+  if(!D.supabase.url) return `<h1 class="title">Tabla</h1><div class="panel"><p class="note">La tabla aparece en cuanto se activen las apuestas.</p></div>`;
+  if(!boardCache){fetchBoard();return '<h1 class="title">Tabla</h1><div class="panel"><p class="note">Cargando…</p></div>'}
+  const B=boardCache;
+  return `<h1 class="title">Tabla de la liga</h1>
+  <div class="panel"><div class="ph" style="cursor:default">La casa</div><div class="house"><div><small>Total apostado</small><b>${money(B.house.handle)}</b></div><div><small>Ganancia de la casa</small><b class="${B.house.profit>=0?'w':'lo'}">${money(B.house.profit)}</b></div><div><small>En juego ahora</small><b>${money(B.house.open)}</b></div></div></div>
+  <div class="panel"><table class="lb"><thead><tr><th>#</th><th>Apostador</th><th class="n">Saldo</th><th class="n hide-m">En juego</th><th class="n">G-P</th></tr></thead><tbody>
+  ${B.bettors.map((b,i)=>`<tr><td>${i+1}</td><td>${esc(b.name)}</td><td class="n"><b>${money(b.balance)}</b></td><td class="n hide-m">${money(b.at_risk)}</td><td class="n">${b.won}-${b.lost}</td></tr>`).join('')||'<tr><td colspan="5" class="note">Nadie ha entrado todavía.</td></tr>'}</tbody></table></div>
+  <div class="panel"><div class="ph" style="cursor:default">Últimos boletos de la liga</div>${B.recent.map(b=>betCard(b,true)).join('')||'<p class="note">Sin boletos todavía.</p>'}</div>`;
+}
+
+/* ---------- paneles plegables ---------- */
+function panel(id,title,body){const closed=openPanels[id]===false;
+  return `<div class="panel${closed?' closed':''}"><div class="ph" onclick="togglePanel('${id}',this)"><span>${title}</span><span class="chev">▾</span></div><div class="pb">${body}</div></div>`}
+function togglePanel(id,el){const p=el.parentElement;p.classList.toggle('closed');openPanels[id]=!p.classList.contains('closed');store.set('cb_panels',openPanels)}
+
+/* ---------- boleto ---------- */
+function pick(id){
+  const m=M[id]; if(!m||m.status!=='open') return;
+  const i=slip.findIndex(s=>s.id===id);
+  if(i>=0) slip.splice(i,1);
+  else{ slip=slip.filter(s=>s.grp!==m.grp); slip.push({id,grp:m.grp,label:m.label,dec:m.dec,status:m.status,cat:m.cat||''}) }
+  store.set('cb_slip',slip); render(); flashSlip();
+}
+function flashSlip(){const b=$('mslip');b.animate?.([{transform:'translateY(-4px)'},{transform:'none'}],{duration:200})}
+function totalDec(){return slip.filter(s=>!s.gone).reduce((a,s)=>a*s.dec,1)}
+function renderSlip(){
+  const n=slip.length; $('cnt').textContent=n; $('mcnt').textContent=n;
+  $('mslip').classList.toggle('empty',!n||$('slip').classList.contains('open'));
+  if(!n){$('legs').innerHTML='<div class="slipempty">Toca cualquier momio para agregarlo a tu boleto. Puedes combinar matchups, props y futuros en un parlay.</div>';$('slipfoot').innerHTML='';$('modds').textContent='';return}
+  $('legs').innerHTML=slip.map(s=>`<div class="leg${s.gone||s.status!=='open'?' bad':''}${s.changed?' chg':''}"><div class="lb">${esc(s.label)}<small>${s.gone?'Ya no disponible':s.status!=='open'?'Apuestas en pausa':s.changed?'El momio cambió':esc(s.cat||'')}</small></div><span class="o">${odds(s.dec)}</span><button class="x" onclick="pick('${s.id}')" aria-label="Quitar">×</button></div>`).join('');
+  const dec=totalDec(), stake=Number(store.get('cb_stake',100))||0;
+  $('modds').textContent=(n>1?'Parlay ':'')+odds(dec);
+  const blocked=slip.some(s=>s.gone||s.status!=='open');
+  $('slipfoot').innerHTML=`<div class="sumrow"><span>${n>1?'Parlay ('+n+' selecciones)':'Sencilla'}</span><b>${odds(dec)}</b></div>
+   <div class="stake"><span>$</span><input id="stake" type="number" inputmode="decimal" min="10" step="10" value="${stake}"></div>
+   <div class="qs">${[50,100,500,1000].map(v=>`<button onclick="setStake(${v})">+${v}</button>`).join('')}</div>
+   <div class="sumrow"><span>Para ganar</span><b id="towin">${money(stake*dec)}</b></div>
+   <button class="place" id="placeBtn" ${blocked||!D.supabase.url?'disabled':''} onclick="placeBet()">${!D.supabase.url?'Apuestas disponibles pronto':blocked?'Quita las selecciones cerradas':user?'Apostar '+money(stake):'Entrar y apostar'}</button>
+   <div class="msg" id="slipMsg"></div>`;
+  $('stake').oninput=e=>{const v=Number(e.target.value)||0;store.set('cb_stake',v);$('towin').textContent=money(v*totalDec());const b=$('placeBtn');if(user&&!b.disabled)b.textContent='Apostar '+money(v)};
+}
+function setStake(v){const cur=Number(store.get('cb_stake',0))||0;store.set('cb_stake',cur+v);renderSlip()}
+function slipMsg(t,ok){const e=$('slipMsg');if(!e)return;e.textContent=t;e.className='msg on '+(ok?'okm':'err')}
+async function rpc(fn,args){
+  const r=await fetch(D.supabase.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json',apikey:D.supabase.anon,Authorization:'Bearer '+D.supabase.anon},body:JSON.stringify(args)});
+  const j=await r.json().catch(()=>null);
+  if(!r.ok) throw new Error(j?.message||'Error del servidor');
+  return j;
+}
+async function placeBet(){
+  if(!user) return openLogin();
+  const stake=Number(store.get('cb_stake',0));
+  if(!(stake>=10)) return slipMsg('La apuesta mínima es $10');
+  const b=$('placeBtn'); b.disabled=true; b.textContent='Enviando…';
+  try{
+    const r=await rpc('place_bet',{p_team:user.team,p_pin:user.pin,p_markets:slip.map(s=>s.id),p_stake:stake,p_expected:Number(totalDec().toFixed(3))});
+    user.balance=r.balance; store.set('cb_user',user);
+    slip=[]; store.set('cb_slip',slip); myCache=null; boardCache=null;
+    render(); $('legs').innerHTML=`<div class="slipempty" style="color:var(--ok)">✓ Boleto #${r.bet_id} registrado a ${odds(r.dec)}. Lo ves en "Mis apuestas".</div>`;
+  }catch(e){ renderSlip(); slipMsg(e.message) }
+}
+
+/* ---------- sesión ---------- */
+function openLogin(){
+  $('lgTeam').innerHTML=Object.values(D.teams).map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  if(user) $('lgTeam').value=user.team;
+  $('lgMsg').className='msg'; $('login').classList.add('on'); setTimeout(()=>$('lgPin').focus(),50);
+}
+function closeLogin(){$('login').classList.remove('on')}
+$('lgGo').onclick=async()=>{
+  if(!D.supabase.url){$('lgMsg').textContent='Las cuentas se activan pronto.';$('lgMsg').className='msg on err';return}
+  const tid=Number($('lgTeam').value), pin=$('lgPin').value.trim();
+  try{const r=await rpc('claim',{p_team:tid,p_name:team(tid).name,p_pin:pin});
+    user={team:tid,pin,balance:r.balance}; store.set('cb_user',user); closeLogin(); myCache=null; render();
+  }catch(e){$('lgMsg').textContent=e.message;$('lgMsg').className='msg on err'}
+};
+$('lgPin').addEventListener('keydown',e=>{if(e.key==='Enter')$('lgGo').click()});
+function logout(){user=null;store.set('cb_user',null);myCache=null;render()}
+async function fetchMine(){try{myCache=await rpc('my_bets',{p_team:user.team,p_pin:user.pin});user.balance=myCache.balance;store.set('cb_user',user)}catch(e){myCache={bets:[]};if(/PIN/.test(e.message))logout()}render()}
+async function fetchBoard(){try{boardCache=await rpc('board',{})}catch(e){boardCache={bettors:[],house:{handle:0,profit:0,open:0},recent:[]}}render()}
+
+/* ---------- navegación ---------- */
+function go(v,tab){view={v,tab};if(v==='mybets')myCache=null;if(v==='board')boardCache=null;render();window.scrollTo({top:0})}
+function openMatch(id){view={v:'match',id,tab:'lines'};render();window.scrollTo({top:0})}
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
+document.querySelectorAll('#fmt button').forEach(b=>b.onclick=()=>{fmt=b.dataset.f;store.set('cb_fmt',fmt);render()});
+$('clear').onclick=()=>{slip=[];store.set('cb_slip',slip);render()};
+$('mslip').onclick=()=>{$('slip').classList.add('open');renderSlip()};
+document.addEventListener('click',e=>{const s=$('slip');if(s.classList.contains('open')&&!s.contains(e.target)&&!$('mslip').contains(e.target)&&!e.target.closest('.odd')){s.classList.remove('open');renderSlip()}});
+
+function render(){
+  if(!D) return;
+  renderTop(); renderSide();
+  $('main').innerHTML={week:()=>viewWeek(false),live:()=>viewWeek(true),match:viewMatch,futures:viewFutures,mybets:viewMyBets,board:viewBoard}[view.v]();
+  renderSlip();
+}
+load(true);
+setInterval(()=>load(false),60000);
+if(user) setTimeout(()=>{if(D?.supabase.url)rpc('my_bets',{p_team:user.team,p_pin:user.pin}).then(r=>{user.balance=r.balance;store.set('cb_user',user);renderTop()}).catch(()=>{})},800);
+</script>
+</body>
+</html>

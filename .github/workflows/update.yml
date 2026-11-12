@@ -1,0 +1,53 @@
+name: Actualizar líneas
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    # Horarios en UTC (Ciudad de México = UTC-6)
+    - cron: "0 13 * * *"          # todos los días, 7:00 am
+    - cron: "*/10 0-5 * * 5"      # jueves en la noche (TNF)
+    - cron: "*/30 13-16 * * 0"    # domingo antes de los juegos (inactivos)
+    - cron: "*/10 17-23 * * 0"    # domingo, juegos
+    - cron: "*/10 0-4 * * 1"      # domingo en la noche (SNF)
+    - cron: "*/10 0-5 * * 2"      # lunes en la noche (MNF)
+    - cron: "*/10 17-23 * 12 6"   # sábados de diciembre
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: lineas
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Generar líneas y liquidar boletos
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python scripts/update.py
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
