@@ -205,7 +205,7 @@ def build_week(week, current_week, teams, proteams):
         side = {}
         for hs in ("home", "away"):
             t = m[hs]
-            lineup = []
+            lineup, roster = [], []
             for e in (t.get("rosterForCurrentScoringPeriod") or {}).get("entries", []):
                 slot = SLOT.get(e["lineupSlotId"])
                 p = e["playerPoolEntry"]["player"]
@@ -252,14 +252,20 @@ def build_week(week, current_week, teams, proteams):
                       "td": round(sum(tdl) / len(tdl), 3) if tdl else 0,
                       "ptd": round(sum(ptdl) / len(ptdl), 3) if ptdl else 0,
                       "act_td": tds.get("act", (0, 0))[0], "act_ptd": tds.get("act", (0, 0))[1],
-                      "played": act is not None, "team": t["teamId"]}
+                      "played": act is not None, "team": t["teamId"], "ir": e["lineupSlotId"] == 21}
                 players[p["id"]] = pl       # la banca también se liquida si alguien ya le apostó
+                roster.append(pl)
                 if slot:
                     lineup.append(pl)
             lineup.sort(key=lambda x: SLOT_ORDER.index(x["slot"]))
-            mean = sum(x["mean"] for x in lineup)
-            var = sum(x["sd"] ** 2 for x in lineup)
+            # Las líneas usan la mejor alineación posible, no la que puso el dueño:
+            # así nadie gana momio sentando a sus titulares.
+            best = best_lineup(roster)
+            mean = sum(x["mean"] for x in best)
+            var = sum(x["sd"] ** 2 for x in best)
+            set_mean = sum(x["mean"] for x in lineup)
             side[hs] = {"team": t["teamId"], "lineup": lineup, "mean": mean, "sd": math.sqrt(var),
+                        "setMean": round(set_mean, 2), "best": [x["id"] for x in best],
                         "live": t.get("totalPointsLive", t.get("totalPoints", 0)),
                         "final": t.get("totalPoints", 0), "espnProj": t.get("totalProjectedPointsLive")}
         h, a = side["home"], side["away"]
@@ -334,6 +340,33 @@ def week_extremes(week, matchups, teams):
                             dec=to_dec(p, VIG1), prob=round(p, 4), status="closed" if r else status,
                             result=r, cat=f"Equipo con {name}", team=t))
     return out
+
+
+NEED = {"QB": 1, "RB": 2, "WR": 2, "TE": 1, "K": 1, "DST": 1}
+FLEX_POS = ("RB", "WR", "TE")
+
+
+def best_lineup(roster):
+    """Mejor alineación posible: los que ya jugaron o están jugando quedan donde los dejó
+    ESPN (ya no se pueden mover); los demás espacios se llenan con los mejores disponibles."""
+    need, flex = dict(NEED), 1
+    chosen = []
+    for p in roster:
+        if p["slot"] != "BN" and p["state"] in ("in", "post"):
+            chosen.append(p)
+            if p["slot"] == "FLEX":
+                flex -= 1
+            elif p["slot"] in need:
+                need[p["slot"]] -= 1
+    free = sorted([p for p in roster if p["state"] in ("pre", "bye") and not p["ir"]],
+                  key=lambda p: -p["mean"])
+    used = set()
+    for pos, n in need.items():
+        for p in [x for x in free if x["pos"] == pos][:max(n, 0)]:
+            chosen.append(p); used.add(p["id"])
+    for p in [x for x in free if x["pos"] in FLEX_POS and x["id"] not in used][:max(flex, 0)]:
+        chosen.append(p)
+    return chosen
 
 
 def player_markets(week, pl, teams):
@@ -654,7 +687,7 @@ def main():
     print(f"Semana {cur}: {len(wk['matchups'])} matchups, {len(markets)} mercados, fuentes {wk['sources']}")
 
     if SB_URL and SB_KEY:
-        keys = ("id", "week", "grp", "label", "dec", "status", "result", "max_stake", "was_dec", "legs")
+        keys = ("id", "week", "grp", "label", "dec", "status", "result", "max_stake", "was_dec", "legs", "prob")
         slim = [{k: m.get(k) for k in keys} for m in markets]
         for i in range(0, len(slim), 500):
             sb("rpc/sync_markets", {"rows": slim[i:i + 500]})

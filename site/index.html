@@ -116,6 +116,8 @@ h1.title{font-size:20px;margin:4px 0 10px}
 .bet .bh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:var(--muted)}
 .bet ul{list-style:none;margin:0;padding:0}.bet li{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:2px 0}
 .bet li .r{font-size:11px;font-weight:700}.w{color:var(--ok)}.lo{color:var(--red)}
+.cash{width:100%;margin-top:8px;background:#e8a317;color:#111;font-weight:800;padding:10px;border-radius:4px}
+.cash.confirm{background:var(--ok)}.cashna{font-size:11px;color:var(--muted);margin-top:6px}
 .bet .bf{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}.bet .bf b{color:var(--text)}
 table.lb{width:100%;border-collapse:collapse}table.lb td,table.lb th{padding:9px 12px;border-top:1px solid var(--line);text-align:left}
 table.lb th{font-size:11px;color:var(--muted);font-weight:600;background:var(--row2)}table.lb td.n{text-align:right;font-variant-numeric:tabular-nums}
@@ -208,7 +210,7 @@ async function load(first){
     const nd=await r.json();
     if(D) for(const m of D.markets) prevDec[m.id]=m.dec;
     D=nd; M={}; for(const m of D.markets) M[m.id]=m;
-    syncSlip(); render();
+    syncSlip(); if(view.v==='mybets'&&!coArmed) myCache=null; render();
   }catch(e){ if(first) $('main').innerHTML='<div class="panel"><p class="note">No se pudieron cargar las líneas. Intenta de nuevo en un momento.</p></div>' }
 }
 
@@ -261,7 +263,7 @@ function viewWeek(live){
   ${live?'':boostPanel()}
   <div class="panel"><table class="coupon"><thead><tr><th>Matchup</th><th>Spread</th><th>Total</th><th>Ganador</th></tr></thead><tbody>${list.map(matchRows).join('')}</tbody></table></div>
   ${live?'':weekSpecials()}
-  <div class="panel"><p class="note">Las líneas salen del promedio de ${D.sources.join(', ')} para cada titular. Se recalculan todos los días y cada pocos minutos en días de partido. "O" es over (más de) y "U" es under (menos de).</p></div>`;
+  <div class="panel"><p class="note">Las líneas salen del promedio de ${D.sources.join(', ')} y usan la <b>mejor alineación posible</b> de cada equipo, no la que tenga puesta: sentar titulares no mueve el momio. Se recalculan todos los días y cada pocos minutos en días de partido. "O" es over (más de) y "U" es under (menos de).</p></div>`;
 }
 
 function weekSpecials(){
@@ -296,9 +298,9 @@ function viewMatch(){
   const lineup=[...A.lineup,...H.lineup];
   const head=`<button class="back" onclick="go('week')">‹ Todos los matchups</button>
   <div class="mhead"><div class="vs">
-    <div>${logo(ta)}<div class="nm">${esc(ta.name)}</div><div class="big">${m.state==='open'?A.mean.toFixed(1):A.live.toFixed(1)}</div><div class="pj">${m.state==='open'?'proyectado':'proy. final '+A.mean.toFixed(1)}</div></div>
+    <div>${logo(ta)}<div class="nm">${esc(ta.name)}</div><div class="big">${m.state==='open'?A.mean.toFixed(1):A.live.toFixed(1)}</div><div class="pj">${m.state==='open'?'mejor alineación':'proy. final '+A.mean.toFixed(1)}${setWarn(A)}</div></div>
     <div style="color:#cfe5dc;font-weight:700">VS<br><small>${stateTxt(m)}</small></div>
-    <div>${logo(th)}<div class="nm">${esc(th.name)}</div><div class="big">${m.state==='open'?H.mean.toFixed(1):H.live.toFixed(1)}</div><div class="pj">${m.state==='open'?'proyectado':'proy. final '+H.mean.toFixed(1)}</div></div>
+    <div>${logo(th)}<div class="nm">${esc(th.name)}</div><div class="big">${m.state==='open'?H.mean.toFixed(1):H.live.toFixed(1)}</div><div class="pj">${m.state==='open'?'mejor alineación':'proy. final '+H.mean.toFixed(1)}${setWarn(H)}</div></div>
   </div><div class="probbar"><div style="width:${(pa*100).toFixed(1)}%"></div></div>
   <div class="probtxt"><span>${(pa*100).toFixed(0)}% de ganar</span><span>${(m.pHome*100).toFixed(0)}%</span></div></div>
   <div class="tabs">${[['lines','Líneas'],['pts','Puntos fantasy'],['td','Touchdowns'],['alt','Escaleras'],['lineups','Alineaciones']].map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="view.tab='${k}';render()">${l}</button>`).join('')}</div>`;
@@ -327,6 +329,7 @@ function viewMatch(){
   }
   return head+body+(view.player?playerCard(lineup.find(p=>p.id===view.player)):'');
 }
+function setWarn(s){return s.setMean!=null&&s.mean-s.setMean>=1?`<br><span style="color:#ffd27a">alineación puesta: ${s.setMean.toFixed(1)}</span>`:''}
 function who(p){return `<div class="who">${esc(p.name)}<small>${p.pos} · ${esc(p.nfl)} ${esc(p.opp)}${p.inj?' · <span class="lo">'+esc(p.inj)+'</span>':''}${p.state==='in'?' · <span class="live">'+p.actual.toFixed(1)+'</span>':''}</small></div>`}
 function ptsRows(list){const w=D.week;return list.map(p=>{const m=M[`${w}:pts:${p.id}:o`];const ln=m?m.label.match(/([\d.]+) pts/)?.[1]:'';
   return `<div class="prow">${who(p)}${m?oddBtn(`${w}:pts:${p.id}:o`,'O '+ln)+oddBtn(`${w}:pts:${p.id}:u`,'U '+ln):'<div class="empty" style="grid-column:span 2">'+(p.state==='bye'?'Bye':'Sin línea')+'</div>'}</div>`}).join('')}
@@ -359,11 +362,20 @@ function viewFutures(){
 /* ---------- vistas: mis apuestas y tabla ---------- */
 let myCache=null, boardCache=null;
 function legRes(r){return r==='win'?'<span class="r w">✓</span>':r==='loss'?'<span class="r lo">✗</span>':r==='push'?'<span class="r">Nula</span>':'<span class="r" style="color:var(--muted)">•</span>'}
-function betCard(b,showName){const st={open:'<span class="tag">Abierta</span>',won:'<span class="tag g">Ganada</span>',lost:'<span class="tag r">Perdida</span>',push:'<span class="tag">Anulada</span>'}[b.status];
+function betCard(b,showName){const st={open:'<span class="tag">Abierta</span>',won:'<span class="tag g">Ganada</span>',lost:'<span class="tag r">Perdida</span>',push:'<span class="tag">Anulada</span>',cashed:'<span class="tag g">Cerrada</span>'}[b.status];
   const legs=b.legs||[];
   return `<div class="bet"><div class="bh"><span>${showName?'<b style="color:#fff">'+esc(b.name)+'</b> · ':''}${legs.length>1?'Parlay de '+legs.length:'Sencilla'} · ${new Date(b.created_at).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}</span>${st}</div>
   <ul>${legs.map(l=>typeof l==='string'?`<li><span>${esc(l)}</span></li>`:`<li><span>${esc(l.label)}</span><span>${odds(l.dec)} ${legRes(l.result)}</span></li>`).join('')}</ul>
-  <div class="bf"><span>Apuesta <b>${money(b.stake)}</b> · momio <b>${odds(b.dec)}</b></span><span>${b.status==='open'?'Pago potencial <b>'+money(b.stake*b.dec)+'</b>':b.status==='lost'?'<b class="lo">-'+money(b.stake)+'</b>':'Pagó <b class="w">'+money(b.payout)+'</b>'}</span></div></div>`}
+  <div class="bf"><span>Apuesta <b>${money(b.stake)}</b> · momio <b>${odds(b.dec)}</b></span><span>${b.status==='open'?'Pago potencial <b>'+money(b.stake*b.dec)+'</b>':b.status==='lost'?'<b class="lo">-'+money(b.stake)+'</b>':b.status==='cashed'?'Cobró <b class="w">'+money(b.payout)+'</b>':'Pagó <b class="w">'+money(b.payout)+'</b>'}</span></div>
+  ${!showName&&b.status==='open'?(b.cashout?`<button class="cash" id="co${b.id}" onclick="cashOut(${b.id},${b.cashout})">Cerrar apuesta · ${money(b.cashout)}</button>`:'<div class="cashna">Cerrar apuesta no disponible mientras se juegan tus selecciones.</div>'):''}</div>`}
+let coArmed=null;
+async function cashOut(id,val){
+  const btn=$('co'+id);
+  if(coArmed!==id){coArmed=id;btn.classList.add('confirm');btn.textContent='Confirmar: cobrar '+money(val);setTimeout(()=>{if(coArmed===id){coArmed=null;render()}},5000);return}
+  coArmed=null;btn.disabled=true;btn.textContent='Cerrando…';
+  try{const r=await rpc('cash_out',{p_team:user.team,p_pin:user.pin,p_bet:id,p_expected:val});user.balance=r.balance;store.set('cb_user',user);myCache=null;boardCache=null;render()}
+  catch(e){btn.disabled=false;btn.classList.remove('confirm');btn.textContent=e.message;setTimeout(()=>{myCache=null;render()},2500)}
+}
 function viewMyBets(){
   if(!user) return `<h1 class="title">Mis apuestas</h1><div class="panel"><p class="note">Entra con tu equipo para ver tus boletos.</p><div style="padding:0 12px 12px"><button class="btn-y" onclick="openLogin()">Entrar</button></div></div>`;
   if(!myCache){fetchMine();return '<h1 class="title">Mis apuestas</h1><div class="panel"><p class="note">Cargando…</p></div>'}
