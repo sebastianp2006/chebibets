@@ -1,7 +1,8 @@
 -- Promociones: supermomios (boosts con tope por persona) y boost de ganancia en parlays.
-alter table markets add column if not exists max_stake numeric(12,2);
-alter table markets add column if not exists was_dec   numeric(8,3);
-alter table markets add column if not exists legs      text[];
+alter table markets
+  add column max_stake numeric(12,2),
+  add column was_dec   numeric(8,3),
+  add column legs      text[];
 
 create or replace function sync_markets(rows jsonb) returns int
 language sql security definer set search_path = public as $$
